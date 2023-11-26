@@ -16,8 +16,7 @@ jobs:
         run: bash build.sh
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
-          with:
-            name: debian-kernel
-            retention-days: 7
-            path: |
-              *.deb
+        with:
+          name: debian-kernel
+          path: |
+            *.deb

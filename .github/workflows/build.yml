@@ -8,14 +8,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out
-        uses: actions/checkout@v3
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 5120
           swap-size-mb: 1024
           remove-dotnet: 'true'
+      - name: Check out
+        uses: actions/checkout@v3
       - name: Install dependencies
         run: sudo apt update; sudo apt install -y git build-essential ncurses-dev xz-utils libssl-dev bc flex libelf-dev bison binutils debhelper
       - name: Build kernel

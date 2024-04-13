@@ -1,0 +1,73 @@
+diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
+index fc3dd7e..dc08a6c 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c.txt
+
+@@ -137,6 +137,11 @@
+ - wakeup-source
+ 	device can be used as a wakeup source.
+ 
++- linux,probed
++	If this property is present, then the I2C device will be
++	probed before being added using i2c_new_scanned_device, else
++	linux will instantiate the I2C device normally.
++
+ Binding may contain optional "interrupts" property, describing interrupts
+ used by the device. I2C core will assign "irq" interrupt (or the very first
+ interrupt if not using interrupt names) as primary interrupt for the slave.
+
+diff --git a/drivers/i2c/i2c-core-acpi.c b/drivers/i2c/i2c-core-acpi.c
+index 4dd777c..f657f76 100644
+--- a/drivers/i2c/i2c-core-acpi.c
++++ b/drivers/i2c/i2c-core-acpi.c
+
+@@ -278,6 +278,8 @@
+ 				     struct acpi_device *adev,
+ 				     struct i2c_board_info *info)
+ {
++	struct i2c_client *client;
++
+ 	/*
+ 	 * Skip registration on boards where the ACPI tables are
+ 	 * known to contain bogus I2C devices.
+@@ -288,7 +290,15 @@
+ 	adev->power.flags.ignore_parent = true;
+ 	acpi_device_set_enumerated(adev);
+ 
+-	if (IS_ERR(i2c_new_client_device(adapter, info)))
++	if (!acpi_dev_get_property(adev, "linux,probed", ACPI_TYPE_ANY, NULL)) {
++		unsigned short addrs[] = { info->addr, I2C_CLIENT_END };
++
++		client = i2c_new_scanned_device(adapter, info, addrs, NULL);
++	} else {
++		client = i2c_new_client_device(adapter, info);
++	}
++
++	if (IS_ERR(client))
+ 		adev->power.flags.ignore_parent = false;
+ }
+ 
+
+diff --git a/drivers/i2c/i2c-core-of.c b/drivers/i2c/i2c-core-of.c
+index 3ed74aa..fd375ce 100644
+--- a/drivers/i2c/i2c-core-of.c
++++ b/drivers/i2c/i2c-core-of.c
+
+@@ -75,7 +75,15 @@
+ 	if (ret)
+ 		return ERR_PTR(ret);
+ 
+-	client = i2c_new_client_device(adap, &info);
++	/* Allow device property to enable probing before init */
++	if (of_get_property(node, "linux,probed", NULL)) {
++		unsigned short addrs[] = { info.addr, I2C_CLIENT_END };
++
++		client = i2c_new_scanned_device(adap, &info, addrs, NULL);
++	} else {
++		client = i2c_new_client_device(adap, &info);
++	}
++
+ 	if (IS_ERR(client))
+ 		dev_err(&adap->dev, "of_i2c: Failure registering %pOF\n", node);
+ 
+

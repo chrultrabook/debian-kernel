@@ -1,0 +1,24 @@
+diff --git a/sound/soc/sof/core.c b/sound/soc/sof/core.c
+index 425b023b0..2f14ff711 100644
+--- a/sound/soc/sof/core.c
++++ b/sound/soc/sof/core.c
+@@ -12,6 +12,7 @@
+ #include <linux/module.h>
+ #include <sound/soc.h>
+ #include <sound/sof.h>
++#include "../intel/common/soc-intel-quirks.h"
+ #include "sof-priv.h"
+ #include "sof-of-dev.h"
+ #include "ops.h"
+@@ -578,6 +579,11 @@ int snd_sof_device_probe(struct device *dev, struct snd_sof_pdata *plat_data)
+ 	/* initialize sof device */
+ 	sdev->dev = dev;
+ 
++	/* Baytrail and Cherrytrail need debug mode enabled in order to work properly */
++	if (soc_intel_is_byt() || soc_intel_is_cht()) {
++		sof_core_debug = 1;
++	}
++
+ 	/* initialize default DSP power state */
+ 	sdev->dsp_power_state.state = SOF_DSP_PM_D0;
+ 
